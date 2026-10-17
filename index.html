@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b5cad">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="تمپر میل">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>محاسبه‌گر تمپر میل</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#0b5cad;--acx:#fff;--ok:#0a7a45;--warn:#b45309;--sf:#eef2f7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151a;--card:#1c2128;--tx:#e8ecf1;--mut:#9aa4b2;--bd:#2f3742;--ac:#5aa7ff;--acx:#0a1420;--ok:#4ade80;--warn:#fbbf24;--sf:#252c35}}
+:root[data-theme="dark"]{--bg:#12151a;--card:#1c2128;--tx:#e8ecf1;--mut:#9aa4b2;--bd:#2f3742;--ac:#5aa7ff;--acx:#0a1420;--ok:#4ade80;--warn:#fbbf24;--sf:#252c35}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Vazirmatn,Tahoma,"Segoe UI",system-ui,sans-serif;line-height:1.6;max-width:560px;margin-inline:auto;padding:12px}
+h1{font-size:18px;margin:6px 0 12px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px 6px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:700}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--sf);color:var(--tx);font:inherit;font-size:16px;direction:ltr;text-align:right}
+select{direction:rtl}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.seg{display:flex;gap:6px;margin:4px 0}
+.seg button{flex:1;padding:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);border-radius:8px;font:inherit;font-size:13px;cursor:pointer}
+.seg button.on{border-color:var(--ac);color:var(--ac);font-weight:700}
+.res{background:var(--sf);border-radius:10px;padding:10px;margin-top:10px}
+.big{font-size:24px;font-weight:700;color:var(--ok);direction:ltr;text-align:right}
+.mut{color:var(--mut);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 4px;border-bottom:1px solid var(--bd);text-align:center}
+td.l{direction:ltr}
+.hl{background:var(--sf);font-weight:700}
+.chip{display:inline-block;background:var(--ac);color:var(--acx);border-radius:999px;padding:1px 10px;font-size:12px;margin:2px}
+.del{background:none;border:none;color:var(--warn);font-size:18px;cursor:pointer}
+.add{width:100%;margin-top:8px;padding:10px;background:var(--ac);color:var(--acx);border:none;border-radius:8px;font:inherit;font-weight:700;cursor:pointer}
+.eg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.eg .it{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:8px 6px;text-align:center}
+.eg .it b{display:block;font-size:14px;margin-bottom:4px}
+.eg .it input{text-align:center;padding:6px;font-size:15px}
+.eg .it span{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<h1>محاسبه‌گر تمپر میل</h1>
+<div class="tabs">
+  <button id="t1" class="on">ضخامت ورودی ⇄ خروجی</button>
+  <button id="t2">اثر غلتک (گام بعد از نورد)</button>
+</div>
+
+<!-- Tab 1 -->
+<div id="p1">
+  <div class="card">
+    <label>گرید</label>
+    <select id="g1"></select>
+    <div class="mut" id="e1"></div>
+    <label>جهت محاسبه</label>
+    <div class="seg"><button id="m1a" class="on">ورودی ← خروجی</button><button id="m1b">خروجی ← ورودی</button></div>
+    <label id="l1">ضخامت ورودی (mm)</label>
+    <input id="v1" type="text" inputmode="decimal" placeholder="مثلاً 0.250">
+    <div class="res"><div class="mut" id="r1l">ضخامت خروجی</div><div class="big" id="r1">—</div><div class="mut" id="f1"></div></div>
+  </div>
+  <div class="card">
+    <b style="font-size:14px">مقایسه همه گریدها</b>
+    <table><thead><tr><th>گرید</th><th>الانگیشن</th><th id="th1">خروجی (mm)</th></tr></thead><tbody id="tb1"></tbody></table>
+  </div>
+  <div class="card">
+    <b style="font-size:14px">درصد الانگیشن گریدها</b>
+    <div class="eg" id="eds"></div>
+  </div>
+</div>
+
+<!-- Tab 2 -->
+<div class="hide" id="p2">
+  <div class="card">
+    <label>گرید</label>
+    <select id="g2"></select>
+    <div class="mut" id="e2"></div>
+    <label>گام اندازه‌گیری‌شده روی ورق بعد از نورد (mm)</label>
+    <input id="v2" type="text" inputmode="decimal" placeholder="مثلاً 190">
+    <label>خطای مجاز تطبیق با لیست غلتک‌ها (±٪)</label>
+    <input id="tol" type="text" inputmode="decimal" value="2">
+    <div class="res" id="r2"><div class="mut">گام را وارد کنید.</div></div>
+    <div class="mut" style="margin-top:8px">غلتکِ قبل از تمپر میل: گام اثر روی ورق = گام غلتک × (1 + الانگیشن). پس گام غلتک = گام اندازه‌گیری‌شده ÷ (1 + الانگیشن). برای غلتک‌های بعد از تمپر میل گام تغییری نمی‌کند.</div>
+  </div>
+  <div class="card">
+    <b style="font-size:14px">لیست غلتک‌های خط (گام / محیط، mm)</b>
+    <div class="row" style="margin-top:6px"><input id="rn" type="text" placeholder="نام / موقعیت غلتک" style="direction:rtl"><input id="rp" type="text" inputmode="decimal" placeholder="گام (mm)"></div>
+    <button class="add" id="ra">افزودن غلتک</button>
+    <table style="margin-top:8px"><tbody id="rl"></tbody></table>
+    <div class="mut">لیست روی همین دستگاه ذخیره می‌شود.</div>
+  </div>
+</div>
+
+<script>
+var GR=[["T3",1],["T4",10],["T5",15],["DR8",20],["DR9",25],["DR9M",30]];
+var rolls=[];
+try{var s=localStorage.getItem("tm_rolls");if(s)rolls=JSON.parse(s)||[];}catch(e){}
+try{var s2=localStorage.getItem("tm_el");if(s2){var o=JSON.parse(s2);GR.forEach(function(g,i){if(o[g[0]]!=null)GR[i][1]=o[g[0]];});}}catch(e){}
+var mode=0;
+function $(i){return document.getElementById(i)}
+function num(s){
+  s=String(s).replace(/[۰-۹]/g,function(c){return c.charCodeAt(0)-1776}).replace(/[٠-٩]/g,function(c){return c.charCodeAt(0)-1632}).replace(/[٫,،]/g,".").trim();
+  var n=parseFloat(s);return isFinite(n)?n:NaN;
+}
+function f(n,d){return n.toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:0})}
+function fillSel(id){var h="";GR.forEach(function(g,i){h+='<option value="'+i+'">'+g[0]+" — "+g[1]+"٪</option>"});$(id).innerHTML=h;}
+function el(i){return GR[i][1]/100}
+function calc1(){
+  var gi=+$("g1").value,e=el(gi);
+  $("e1").textContent="الانگیشن: "+GR[gi][1]+"٪  ← ضریب (1+e) = "+f(1+e,3);
+  var v=num($("v1").value);
+  if(isNaN(v)){$("r1").textContent="—";$("f1").textContent="";}
+  else if(mode==0){var r=v/(1+e);$("r1").textContent=f(r,4)+" mm";$("f1").textContent=f(v,4)+" ÷ "+f(1+e,3)+" = "+f(r,4);}
+  else{var r2=v*(1+e);$("r1").textContent=f(r2,4)+" mm";$("f1").textContent=f(v,4)+" × "+f(1+e,3)+" = "+f(r2,4);}
+  var h="";
+  GR.forEach(function(g,i){var x=NaN;if(!isNaN(v))x=mode==0?v/(1+g[1]/100):v*(1+g[1]/100);
+    h+='<tr'+(i==gi?' class="hl"':'')+'><td>'+g[0]+'</td><td>'+g[1]+'٪</td><td class="l">'+(isNaN(x)?"—":f(x,4))+'</td></tr>';});
+  $("tb1").innerHTML=h;
+}
+function setMode(m){
+  mode=m;$("m1a").className=m==0?"on":"";$("m1b").className=m==1?"on":"";
+  $("l1").textContent=m==0?"ضخامت ورودی (mm)":"ضخامت خروجی (mm)";
+  $("r1l").textContent=m==0?"ضخامت خروجی":"ضخامت ورودی لازم";
+  $("th1").textContent=m==0?"خروجی (mm)":"ورودی (mm)";
+  calc1();
+}
+function matches(p,tol){
+  var out=[];rolls.forEach(function(r){var d=(p-r.p)/r.p*100;if(Math.abs(d)<=tol)out.push({n:r.n,p:r.p,d:d});});
+  out.sort(function(a,b){return Math.abs(a.d)-Math.abs(b.d)});
+  if(!out.length)return '<div class="mut">غلتکی در محدوده پیدا نشد.</div>';
+  return out.map(function(m){return '<span class="chip">'+m.n+' ('+f(m.p,2)+') '+(m.d>=0?"+":"")+f(m.d,2)+'٪</span>'}).join("");
+}
+function calc2(){
+  var gi=+$("g2").value,e=el(gi);
+  $("e2").textContent="الانگیشن: "+GR[gi][1]+"٪  ← ضریب (1+e) = "+f(1+e,3);
+  var m=num($("v2").value),tol=num($("tol").value);if(isNaN(tol))tol=2;
+  if(isNaN(m)){$("r2").innerHTML='<div class="mut">گام را وارد کنید.</div>';return;}
+  var p0=m/(1+e);
+  $("r2").innerHTML=
+   '<div class="mut">اگر غلتک قبل از تمپر میل باشد — گام واقعی غلتک:</div><div class="big">'+f(p0,3)+' mm</div>'+matches(p0,tol)+
+   '<div class="mut" style="margin-top:10px">اگر غلتک بعد از تمپر میل باشد — گام غلتک:</div><div class="big">'+f(m,3)+' mm</div>'+matches(m,tol);
+}
+function drawRolls(){
+  $("rl").innerHTML=rolls.map(function(r,i){return '<tr><td>'+r.n+'</td><td class="l">'+f(r.p,3)+'</td><td><button class="del" data-i="'+i+'">×</button></td></tr>'}).join("")||'<tr><td class="mut">هنوز غلتکی ثبت نشده.</td></tr>';
+}
+function saveRolls(){try{localStorage.setItem("tm_rolls",JSON.stringify(rolls))}catch(e){}}
+function drawEds(){
+  $("eds").innerHTML=GR.map(function(g,i){return '<div class="it"><b>'+g[0]+'</b><input type="text" inputmode="decimal" data-e="'+i+'" value="'+g[1]+'"><span>درصد</span></div>'}).join("");
+  Array.prototype.forEach.call($("eds").querySelectorAll("input"),function(inp){
+    inp.addEventListener("input",function(){var n=num(inp.value);if(!isNaN(n)&&n>=0){GR[+inp.dataset.e][1]=n;
+      try{var o={};GR.forEach(function(g){o[g[0]]=g[1]});localStorage.setItem("tm_el",JSON.stringify(o))}catch(e){}
+      var a=$("g1").value,b=$("g2").value;fillSel("g1");fillSel("g2");$("g1").value=a;$("g2").value=b;calc1();calc2();}});
+  });
+}
+function tab(n){$("p1").className=n==1?"":"hide";$("p2").className=n==2?"":"hide";$("t1").className=n==1?"on":"";$("t2").className=n==2?"on":"";}
+fillSel("g1");fillSel("g2");drawEds();drawRolls();setMode(0);calc2();
+$("t1").onclick=function(){tab(1)};$("t2").onclick=function(){tab(2)};
+$("m1a").onclick=function(){setMode(0)};$("m1b").onclick=function(){setMode(1)};
+$("g1").onchange=calc1;$("v1").oninput=calc1;
+$("g2").onchange=calc2;$("v2").oninput=calc2;$("tol").oninput=calc2;
+$("ra").onclick=function(){var n=$("rn").value.trim(),p=num($("rp").value);if(!n||isNaN(p)||p<=0)return;rolls.push({n:n,p:p});saveRolls();$("rn").value="";$("rp").value="";drawRolls();calc2();};
+$("rl").onclick=function(ev){var i=ev.target.dataset&&ev.target.dataset.i;if(i!=null){rolls.splice(+i,1);saveRolls();drawRolls();calc2();}};
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
+</body>
+</html>
