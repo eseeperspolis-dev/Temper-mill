@@ -8,7 +8,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="تمپر میل">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <title>محاسبه‌گر تمپر میل</title>
@@ -47,6 +46,7 @@ td.l{direction:ltr}
 .eg .it b{display:block;font-size:14px;margin-bottom:4px}
 .eg .it input{text-align:center;padding:6px;font-size:15px}
 .eg .it span{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+.pr{display:flex;gap:12px;align-items:flex-end}.pr>div{flex:1}.pr .big{font-size:22px}
 .hide{display:none}
 </style>
 </head>
@@ -85,6 +85,8 @@ td.l{direction:ltr}
     <label>گرید</label>
     <select id="g2"></select>
     <div class="mut" id="e2"></div>
+    <label>محل غلتک روی خط</label>
+    <div class="seg"><button id="pa" class="on">قبل از تمپر میل</button><button id="pb">بعد از تمپر میل</button></div>
     <label>گام اندازه‌گیری‌شده روی ورق بعد از نورد (mm)</label>
     <input id="v2" type="text" inputmode="decimal" placeholder="مثلاً 190">
     <label>خطای مجاز تطبیق با لیست غلتک‌ها (±٪)</label>
@@ -94,10 +96,16 @@ td.l{direction:ltr}
   </div>
   <div class="card">
     <b style="font-size:14px">لیست غلتک‌های خط (گام / محیط، mm)</b>
-    <div class="row" style="margin-top:6px"><input id="rn" type="text" placeholder="نام / موقعیت غلتک" style="direction:rtl"><input id="rp" type="text" inputmode="decimal" placeholder="گام (mm)"></div>
+    <input id="rn" type="text" placeholder="نام / موقعیت غلتک" style="direction:rtl;margin-top:6px"><div class="row" style="margin-top:6px"><input id="rp" type="text" inputmode="decimal" placeholder="گام (mm)"><input id="rd" type="text" inputmode="decimal" placeholder="یا قطر (mm)"></div>
     <button class="add" id="ra">افزودن غلتک</button>
     <table style="margin-top:8px"><tbody id="rl"></tbody></table>
-    <div class="mut">لیست روی همین دستگاه ذخیره می‌شود.</div>
+    <div class="mut">گام یا قطر را وارد کنید؛ دیگری خودکار حساب می‌شود (گام = π × قطر). لیست روی همین دستگاه ذخیره می‌شود.</div>
+  </div>
+  <div class="card">
+    <b style="font-size:14px">تبدیل قطر غلتک به گام</b>
+    <label>قطر غلتک (mm)</label>
+    <input id="dc" type="text" inputmode="decimal" placeholder="مثلاً 60">
+    <div class="res" id="r3"><div class="mut">قطر را وارد کنید.</div></div>
   </div>
 </div>
 
@@ -106,7 +114,7 @@ var GR=[["T3",1],["T4",10],["T5",15],["DR8",20],["DR9",25],["DR9M",30]];
 var rolls=[];
 try{var s=localStorage.getItem("tm_rolls");if(s)rolls=JSON.parse(s)||[];}catch(e){}
 try{var s2=localStorage.getItem("tm_el");if(s2){var o=JSON.parse(s2);GR.forEach(function(g,i){if(o[g[0]]!=null)GR[i][1]=o[g[0]];});}}catch(e){}
-var mode=0;
+var mode=0,pos=0;
 function $(i){return document.getElementById(i)}
 function num(s){
   s=String(s).replace(/[۰-۹]/g,function(c){return c.charCodeAt(0)-1776}).replace(/[٠-٩]/g,function(c){return c.charCodeAt(0)-1632}).replace(/[٫,،]/g,".").trim();
@@ -138,20 +146,27 @@ function matches(p,tol){
   var out=[];rolls.forEach(function(r){var d=(p-r.p)/r.p*100;if(Math.abs(d)<=tol)out.push({n:r.n,p:r.p,d:d});});
   out.sort(function(a,b){return Math.abs(a.d)-Math.abs(b.d)});
   if(!out.length)return '<div class="mut">غلتکی در محدوده پیدا نشد.</div>';
-  return out.map(function(m){return '<span class="chip">'+m.n+' ('+f(m.p,2)+') '+(m.d>=0?"+":"")+f(m.d,2)+'٪</span>'}).join("");
+  return out.map(function(m){return '<span class="chip">'+m.n+' ('+f(m.p,2)+' | Ø'+f(m.p/Math.PI,1)+') '+(m.d>=0?"+":"")+f(m.d,2)+'٪</span>'}).join("");
 }
 function calc2(){
   var gi=+$("g2").value,e=el(gi);
   $("e2").textContent="الانگیشن: "+GR[gi][1]+"٪  ← ضریب (1+e) = "+f(1+e,3);
   var m=num($("v2").value),tol=num($("tol").value);if(isNaN(tol))tol=2;
   if(isNaN(m)){$("r2").innerHTML='<div class="mut">گام را وارد کنید.</div>';return;}
-  var p0=m/(1+e);
+  var pre=(pos==0),p0=pre?m/(1+e):m;
   $("r2").innerHTML=
-   '<div class="mut">اگر غلتک قبل از تمپر میل باشد — گام واقعی غلتک:</div><div class="big">'+f(p0,3)+' mm</div>'+matches(p0,tol)+
-   '<div class="mut" style="margin-top:10px">اگر غلتک بعد از تمپر میل باشد — گام غلتک:</div><div class="big">'+f(m,3)+' mm</div>'+matches(m,tol);
+   '<div class="mut">'+(pre?'گام اثر ÷ (1+e) = '+f(m,3)+' ÷ '+f(1+e,3):'غلتک بعد از تمپر میل: بدون تأثیر الانگیشن')+'</div>'+
+   '<div class="pr" style="margin-top:6px"><div><div class="mut">گام غلتک</div><div class="big">'+f(p0,3)+' mm</div></div><div><div class="mut">قطر غلتک</div><div class="big">Ø '+f(p0/Math.PI,2)+' mm</div></div></div>'+matches(p0,tol);
+}
+function calc3(){
+  var d=num($("dc").value),e=el(+$("g2").value);
+  if(isNaN(d)||d<=0){$("r3").innerHTML='<div class="mut">قطر را وارد کنید.</div>';return;}
+  var pc=d*Math.PI;
+  $("r3").innerHTML='<div class="mut">گام (محیط) غلتک:</div><div class="big">'+f(pc,3)+' mm</div>'+
+   '<div class="mut" style="margin-top:8px">اگر قبل از تمپر میل باشد، گام اثر روی ورق ('+GR[+$("g2").value][0]+'):</div><div class="big">'+f(pc*(1+e),3)+' mm</div>';
 }
 function drawRolls(){
-  $("rl").innerHTML=rolls.map(function(r,i){return '<tr><td>'+r.n+'</td><td class="l">'+f(r.p,3)+'</td><td><button class="del" data-i="'+i+'">×</button></td></tr>'}).join("")||'<tr><td class="mut">هنوز غلتکی ثبت نشده.</td></tr>';
+  $("rl").innerHTML=rolls.map(function(r,i){return '<tr><td>'+r.n+'</td><td class="l">'+f(r.p,3)+'</td><td class="l mut">Ø '+f(r.p/Math.PI,2)+'</td><td><button class="del" data-i="'+i+'">×</button></td></tr>'}).join("")||'<tr><td class="mut">هنوز غلتکی ثبت نشده.</td></tr>';
 }
 function saveRolls(){try{localStorage.setItem("tm_rolls",JSON.stringify(rolls))}catch(e){}}
 function drawEds(){
@@ -159,16 +174,18 @@ function drawEds(){
   Array.prototype.forEach.call($("eds").querySelectorAll("input"),function(inp){
     inp.addEventListener("input",function(){var n=num(inp.value);if(!isNaN(n)&&n>=0){GR[+inp.dataset.e][1]=n;
       try{var o={};GR.forEach(function(g){o[g[0]]=g[1]});localStorage.setItem("tm_el",JSON.stringify(o))}catch(e){}
-      var a=$("g1").value,b=$("g2").value;fillSel("g1");fillSel("g2");$("g1").value=a;$("g2").value=b;calc1();calc2();}});
+      var a=$("g1").value,b=$("g2").value;fillSel("g1");fillSel("g2");$("g1").value=a;$("g2").value=b;calc1();calc2();calc3();}});
   });
 }
 function tab(n){$("p1").className=n==1?"":"hide";$("p2").className=n==2?"":"hide";$("t1").className=n==1?"on":"";$("t2").className=n==2?"on":"";}
-fillSel("g1");fillSel("g2");drawEds();drawRolls();setMode(0);calc2();
+fillSel("g1");fillSel("g2");drawEds();drawRolls();setMode(0);calc2();calc3();
 $("t1").onclick=function(){tab(1)};$("t2").onclick=function(){tab(2)};
 $("m1a").onclick=function(){setMode(0)};$("m1b").onclick=function(){setMode(1)};
 $("g1").onchange=calc1;$("v1").oninput=calc1;
-$("g2").onchange=calc2;$("v2").oninput=calc2;$("tol").oninput=calc2;
-$("ra").onclick=function(){var n=$("rn").value.trim(),p=num($("rp").value);if(!n||isNaN(p)||p<=0)return;rolls.push({n:n,p:p});saveRolls();$("rn").value="";$("rp").value="";drawRolls();calc2();};
+$("g2").onchange=function(){calc2();calc3()};$("dc").oninput=calc3;$("v2").oninput=calc2;$("tol").oninput=calc2;
+function setPos(n){pos=n;$("pa").className=n==0?"on":"";$("pb").className=n==1?"on":"";calc2();}
+$("pa").onclick=function(){setPos(0)};$("pb").onclick=function(){setPos(1)};
+$("ra").onclick=function(){var n=$("rn").value.trim(),p=num($("rp").value),d=num($("rd").value);if(isNaN(p)&&!isNaN(d))p=d*Math.PI;if(!n||isNaN(p)||p<=0)return;rolls.push({n:n,p:p});saveRolls();$("rn").value="";$("rp").value="";$("rd").value="";drawRolls();calc2();};
 $("rl").onclick=function(ev){var i=ev.target.dataset&&ev.target.dataset.i;if(i!=null){rolls.splice(+i,1);saveRolls();drawRolls();calc2();}};
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
